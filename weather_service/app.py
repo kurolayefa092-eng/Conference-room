@@ -3,6 +3,7 @@ from flask_cors import CORS
 import random
 import json
 import boto3
+from botocore.exceptions import ClientError
 import os
 from datetime import datetime
 
@@ -10,10 +11,16 @@ app = Flask(__name__)
 CORS(app)
 
 # AWS S3 config
-S3_BUCKET = os.getenv("S3_BUCKET_NAME")
-AWS_REGION = os.getenv("AWS_REGION", "eu-west-1")
+S3_BUCKET = os.getenv("S3_BUCKET", "conference-room-booking-weather-forcast")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
-s3 = boto3.client("s3", region_name=AWS_REGION)
+# Initialize S3 client with explicit credentials if provided
+s3_config = {"region_name": AWS_REGION}
+if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
+    s3_config["aws_access_key_id"] = os.getenv("AWS_ACCESS_KEY_ID")
+    s3_config["aws_secret_access_key"] = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+s3 = boto3.client("s3", **s3_config)
 
 BASE_TEMP = 21  # degrees C
 
@@ -64,14 +71,23 @@ def get_weather_forecast():
     }
 
     # Store JSON in S3
-    file_key = f"{location.replace(' ', '_')}/{date}.json"
-
-    s3.put_object(
-        Bucket=S3_BUCKET,
-        Key=file_key,
-        Body=json.dumps(weather_data),
-        ContentType="application/json"
-    )
+    try:
+        file_key = f"forecasts/{location.replace(' ', '_')}/{date}.json"
+        
+        s3.put_object(
+            Bucket=S3_BUCKET,
+            Key=file_key,
+            Body=json.dumps(weather_data),
+            ContentType="application/json"
+        )
+        
+        weather_data["s3_location"] = f"s3://{S3_BUCKET}/{file_key}"
+        print(f"Successfully saved to S3: {file_key}")
+        
+    except ClientError as e:
+        error_msg = f"Failed to save to S3: {str(e)}"
+        print(error_msg)
+        weather_data["s3_error"] = error_msg
 
     return jsonify(weather_data), 200
 

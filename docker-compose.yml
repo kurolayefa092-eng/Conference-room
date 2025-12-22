@@ -118,7 +118,7 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=eu-west-2
+      - AWS_REGION=${AWS_REGION}
       - S3_BUCKET_NAME=conference-room-weather-forecasts
     networks:
       - microservices-network
@@ -127,9 +127,9 @@ services:
   # ==========================================
   # PRICING SERVICE - Port 87
   # ==========================================
-  pricing_service:
+  booking_service:
     build:
-      context: ./pricing_service
+      context: ./booking_service
       dockerfile: Dockerfile
     container_name: pricing-service
     ports:
