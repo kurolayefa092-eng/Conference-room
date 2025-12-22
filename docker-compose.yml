@@ -4,7 +4,6 @@ services:
   # ==========================================
   # AUTH SERVICE - Port 84
   # ==========================================
-  
   mongodb:
     image: mongo:7.0
     container_name: auth-mongodb
@@ -57,7 +56,6 @@ services:
   # ==========================================
   # ROOM SERVICE - Port 85
   # ==========================================
-  
   room-mongodb:
     image: mongo:7.0
     container_name: room-mongodb
@@ -103,6 +101,45 @@ services:
     depends_on:
       room-mongodb:
         condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # ==========================================
+  # WEATHER SERVICE - Port 86
+  # ==========================================
+  weather_service:
+    build:
+      context: ./weather_service
+      dockerfile: Dockerfile
+    container_name: weather-service
+    ports:
+      - "86:86"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=eu-west-2
+      - S3_BUCKET_NAME=conference-room-weather-forecasts
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # ==========================================
+  # PRICING SERVICE - Port 87
+  # ==========================================
+  pricing_service:
+    build:
+      context: ./pricing_service
+      dockerfile: Dockerfile
+    container_name: pricing-service
+    ports:
+      - "87:87"
+    environment:
+      - ROOM_SERVICE_URL=http://room-service:85/api/rooms
+      - WEATHER_SERVICE_URL=http://weather-service:86/api/weather/forecast
+    depends_on:
+      - room_service
+      - weather_service
     networks:
       - microservices-network
     restart: unless-stopped
