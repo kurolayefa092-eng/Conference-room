@@ -56,6 +56,18 @@ def filter_by_location():
     
     return jsonify({"rooms": rooms, "count": len(rooms)}), 200
 
+# Filter rooms by price range
+@app.route('/api/rooms/filter/price', methods=['GET'])
+def filter_by_price():
+    min_price = request.args.get('min', type=float, default=0)
+    max_price = request.args.get('max', type=float, default=10000)
+    
+    rooms = list(rooms_collection.find({
+        "price_per_hour": {"$gte": min_price, "$lte": max_price}
+    }, {"_id": 0}))
+    
+    return jsonify({"rooms": rooms, "count": len(rooms)}), 200
+
 # Initialize database with sample rooms
 @app.route('/api/rooms/seed', methods=['POST'])
 def seed_rooms():
@@ -63,13 +75,15 @@ def seed_rooms():
     if rooms_collection.count_documents({}) > 0:
         return jsonify({"message": "Database already contains rooms"}), 200
     
-    # UK Conference Rooms Data
+    # UK Conference Rooms Data with prices
     uk_rooms = [
         {
             "room_id": "LON001",
             "name": "The Churchill Room",
             "location": "London, Westminster",
             "capacity": 50,
+            "price_per_hour": 150.00,
+            "price_per_day": 1000.00,
             "amenities": ["Projector", "Video Conference", "Whiteboard", "WiFi"],
             "description": "Named after Winston Churchill, perfect for executive meetings"
         },
@@ -78,6 +92,8 @@ def seed_rooms():
             "name": "Thames View Conference Hall",
             "location": "London, South Bank",
             "capacity": 200,
+            "price_per_hour": 350.00,
+            "price_per_day": 2500.00,
             "amenities": ["Stage", "Audio System", "Projector", "Catering Available"],
             "description": "Large conference hall with stunning Thames views"
         },
@@ -86,6 +102,8 @@ def seed_rooms():
             "name": "The Boardroom at Canary Wharf",
             "location": "London, Canary Wharf",
             "capacity": 20,
+            "price_per_hour": 200.00,
+            "price_per_day": 1400.00,
             "amenities": ["Smart Board", "Video Conference", "Coffee Machine"],
             "description": "Premium boardroom in the heart of London's financial district"
         },
@@ -94,6 +112,8 @@ def seed_rooms():
             "name": "Northern Innovation Hub",
             "location": "Manchester, City Centre",
             "capacity": 100,
+            "price_per_hour": 120.00,
+            "price_per_day": 850.00,
             "amenities": ["Projector", "Sound System", "WiFi", "Breakout Rooms"],
             "description": "Modern space for tech conferences and innovation summits"
         },
@@ -102,6 +122,8 @@ def seed_rooms():
             "name": "Media City Conference Room",
             "location": "Manchester, Salford Quays",
             "capacity": 75,
+            "price_per_hour": 100.00,
+            "price_per_day": 700.00,
             "amenities": ["Video Production", "Streaming Equipment", "Green Screen"],
             "description": "State-of-the-art facility for media and digital events"
         },
@@ -110,6 +132,8 @@ def seed_rooms():
             "name": "Bullring Business Suite",
             "location": "Birmingham, City Centre",
             "capacity": 40,
+            "price_per_hour": 80.00,
+            "price_per_day": 550.00,
             "amenities": ["Projector", "Video Conference", "Catering"],
             "description": "Central location ideal for midlands business meetings"
         },
@@ -118,6 +142,8 @@ def seed_rooms():
             "name": "Edinburgh Castle View Room",
             "location": "Edinburgh, Old Town",
             "capacity": 60,
+            "price_per_hour": 110.00,
+            "price_per_day": 800.00,
             "amenities": ["Projector", "WiFi", "Historic Setting"],
             "description": "Elegant room with views of Edinburgh Castle"
         },
@@ -126,6 +152,8 @@ def seed_rooms():
             "name": "Scottish Parliament Conference Hall",
             "location": "Edinburgh, Holyrood",
             "capacity": 150,
+            "price_per_hour": 180.00,
+            "price_per_day": 1300.00,
             "amenities": ["Stage", "Audio System", "Translation Booths"],
             "description": "Professional venue near the Scottish Parliament"
         },
@@ -134,6 +162,8 @@ def seed_rooms():
             "name": "Clyde Riverside Meeting Room",
             "location": "Glasgow, City Centre",
             "capacity": 30,
+            "price_per_hour": 75.00,
+            "price_per_day": 500.00,
             "amenities": ["Smart Board", "Video Conference", "River Views"],
             "description": "Modern riverside venue in Glasgow's business district"
         },
@@ -142,6 +172,8 @@ def seed_rooms():
             "name": "Harbourside Innovation Centre",
             "location": "Bristol, Harbourside",
             "capacity": 80,
+            "price_per_hour": 95.00,
+            "price_per_day": 650.00,
             "amenities": ["Projector", "Sound System", "WiFi", "Outdoor Terrace"],
             "description": "Creative space for tech and innovation events"
         },
@@ -150,6 +182,8 @@ def seed_rooms():
             "name": "Yorkshire Business Hub",
             "location": "Leeds, City Centre",
             "capacity": 45,
+            "price_per_hour": 70.00,
+            "price_per_day": 480.00,
             "amenities": ["Projector", "Video Conference", "Catering Kitchen"],
             "description": "Versatile space in Leeds' business quarter"
         },
@@ -158,6 +192,8 @@ def seed_rooms():
             "name": "Albert Dock Conference Suite",
             "location": "Liverpool, Albert Dock",
             "capacity": 120,
+            "price_per_hour": 130.00,
+            "price_per_day": 900.00,
             "amenities": ["Stage", "Audio Visual", "Waterfront Views"],
             "description": "Historic dockside venue for large conferences"
         }
