@@ -355,12 +355,11 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost';
+        const API_URL = 'https://upgraded-robot-q755wp9v4r54c646-80.app.github.dev';
         let selectedRoom = null;
         let clientData = {};
         let roomsWithPricing = [];
 
-        // Set minimum date to today
         document.getElementById('bookingDate').min = new Date().toISOString().split('T')[0];
 
         function updateStepIndicators(currentStep) {
@@ -421,12 +420,13 @@
             roomsContainer.innerHTML = '';
 
             try {
-                // Fetch all rooms
                 const roomsResponse = await fetch(`${API_URL}/api/rooms`);
                 if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
-                const rooms = await roomsResponse.json();
+                const roomsData = await roomsResponse.json();
+                
+                // FIX: Handle wrapped response - extract the rooms array
+                const rooms = roomsData.rooms || roomsData;
 
-                // Get pricing for each room with weather adjustment
                 roomsWithPricing = await Promise.all(rooms.map(async (room) => {
                     try {
                         const availabilityResponse = await fetch(`${API_URL}/api/booking/check-availability`, {
@@ -451,3 +451,151 @@
                         return { ...room, available: false, error: true };
                     }
                 }));
+
+                loadingEl.style.display = 'none';
+                displayRooms(roomsWithPricing);
+
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                errorEl.textContent = `Error loading rooms: ${error.message}`;
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function displayRooms(rooms) {
+            const container = document.getElementById('roomsContainer');
+            container.innerHTML = '';
+
+            if (rooms.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No rooms available</p>';
+                return;
+            }
+
+            rooms.forEach(room => {
+                const roomCard = document.createElement('div');
+                roomCard.className = 'room-card';
+                
+                if (!room.available) {
+                    roomCard.style.opacity = '0.6';
+                    roomCard.style.cursor = 'not-allowed';
+                }
+
+                roomCard.innerHTML = `
+                    <h3>${room.name}</h3>
+                    <div class="location">${room.location}</div>
+                    <p style="color: #666; font-size: 0.9rem; margin: 10px 0;">${room.description}</p>
+                    <div style="color: #999; font-size: 0.85rem; margin: 5px 0;">
+                        Capacity: ${room.capacity} people
+                    </div>
+                    ${room.available ? `
+                        <div class="price">£${room.pricing.final_price.toFixed(2)}/day</div>
+                        <div style="font-size: 0.85rem; color: #999;">
+                            Base: £${room.pricing.base_price} 
+                            ${room.pricing.additional_charge_percentage > 0 ? 
+                                `+ ${room.pricing.additional_charge_percentage}% weather adjustment` : 
+                                '(No additional charge)'}
+                        </div>
+                        <div class="weather-info">
+                            <div>🌡️ Temperature: ${room.pricing.forecasted_temperature}°C</div>
+                            <div>📊 Difference: ${room.pricing.temperature_difference}°C from ideal</div>
+                        </div>
+                    ` : `
+                        <div style="color: #c33; font-weight: bold; margin-top: 10px;">
+                            ❌ Already Booked
+                        </div>
+                        ${room.existingBooking ? 
+                            `<div style="font-size: 0.85rem; color: #999; margin-top: 5px;">
+                                Booked by: ${room.existingBooking.booked_by}
+                            </div>` : ''}
+                    `}
+                `;
+
+                if (room.available) {
+                    roomCard.onclick = () => selectRoom(room, roomCard);
+                }
+
+                container.appendChild(roomCard);
+            });
+        }
+
+        function selectRoom(room, cardElement) {
+            document.querySelectorAll('.room-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            cardElement.classList.add('selected');
+            selectedRoom = room;
+            document.getElementById('confirmBtn').disabled = false;
+        }
+
+        async function confirmBooking() {
+            if (!selectedRoom) {
+                alert('Please select a room');
+                return;
+            }
+
+            const confirmBtn = document.getElementById('confirmBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/booking/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        room_id: selectedRoom.room_id,
+                        date: clientData.date,
+                        client_name: clientData.name,
+                        client_email: clientData.email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showConfirmation(data.booking);
+                } else {
+                    alert(data.message || 'Booking failed. Please try again.');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm Booking';
+                }
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Confirm Booking';
+            }
+        }
+
+        function showConfirmation(booking) {
+            const detailsContainer = document.getElementById('confirmationDetails');
+            detailsContainer.innerHTML = `
+                <div><strong>Booking ID:</strong> ${booking._id}</div>
+                <div><strong>Name:</strong> ${booking.client_name}</div>
+                <div><strong>Email:</strong> ${booking.client_email}</div>
+                <div><strong>Room:</strong> ${booking.room_name}</div>
+                <div><strong>Location:</strong> ${booking.location}</div>
+                <div><strong>Date:</strong> ${booking.date}</div>
+                <div><strong>Temperature:</strong> ${booking.weather_adjustment.forecasted_temperature}°C</div>
+                <div><strong>Base Price:</strong> £${booking.base_price}</div>
+                ${booking.weather_adjustment.additional_charge_percentage > 0 ? 
+                    `<div><strong>Weather Adjustment:</strong> +${booking.weather_adjustment.additional_charge_percentage}% (£${booking.weather_adjustment.additional_charge_amount})</div>` 
+                    : ''}
+                <div style="font-size: 1.3rem; margin-top: 10px;"><strong>Total Price:</strong> £${booking.final_price}</div>
+            `;
+            showStep(3);
+        }
+
+        function resetBooking() {
+            selectedRoom = null;
+            clientData = {};
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientEmail').value = '';
+            document.getElementById('bookingDate').value = '';
+            document.getElementById('confirmBtn').disabled = true;
+            document.getElementById('confirmBtn').textContent = 'Confirm Booking';
+            showStep(1);
+        }
+    </script>
+</body>
+</html>
