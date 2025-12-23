@@ -215,6 +215,27 @@ services:
       - microservices-network
     restart: unless-stopped
 
+api_gateway:
+    build:
+      context: ./api_gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "80:80"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:84
+      - ROOM_SERVICE_URL=http://room-service:85
+      - WEATHER_SERVICE_URL=http://weather-service:86
+      - BOOKING_SERVICE_URL=http://booking-service:87
+    depends_on:
+      - user_auth_service
+      - room_service
+      - weather_service
+      - booking_service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
 networks:
   microservices-network:
     driver: bridge
