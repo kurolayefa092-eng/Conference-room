@@ -108,6 +108,22 @@ services:
   # ==========================================
   # WEATHER SERVICE - Port 86
   # ==========================================
+  weather-mongodb:
+    image: mongo:7.0
+    container_name: weather-mongodb
+    ports:
+      - "27019:27017"
+    volumes:
+      - weather_mongo_data:/data/db
+    networks:
+      - microservices-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
   weather_service:
     build:
       context: ./weather_service
@@ -116,30 +132,27 @@ services:
     ports:
       - "86:86"
     environment:
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=${AWS_REGION}
-      - S3_BUCKET_NAME=conference-room-weather-forecasts
+      - MONGO_URI=mongodb://weather-mongodb:27017/
+    depends_on:
+      weather-mongodb:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
 
-  # ==========================================
-  # PRICING SERVICE - Port 87
-  # ==========================================
-  booking_service:
-    build:
-      context: ./booking_service
-      dockerfile: Dockerfile
-    container_name: pricing-service
+  weather-mongo-express:
+    image: mongo-express:latest
+    container_name: weather-mongo-express
     ports:
-      - "87:87"
+      - "8083:8081"
     environment:
-      - ROOM_SERVICE_URL=http://room-service:85/api/rooms
-      - WEATHER_SERVICE_URL=http://weather-service:86/api/weather/forecast
+      - ME_CONFIG_MONGODB_SERVER=weather-mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
     depends_on:
-      - room_service
-      - weather_service
+      weather-mongodb:
+        condition: service_healthy
     networks:
       - microservices-network
     restart: unless-stopped
@@ -151,3 +164,4 @@ networks:
 volumes:
   auth_mongo_data:
   room_mongo_data:
+  weather_mongo_data:
