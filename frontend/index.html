@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conference Room Booking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6b7280;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(107, 114, 128, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .room-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .room-card:hover {
+            border-color: #6b7280;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .room-card.selected {
+            border-color: #6b7280;
+            background: #f9fafb;
+        }
+
+        .room-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .room-card .location {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .room-card .location::before {
+            content: "📍";
+            margin-right: 5px;
+        }
+
+        .room-card .price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4b5563;
+            margin: 10px 0;
+        }
+
+        .room-card .weather-info {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .room-card .weather-info div {
+            margin: 5px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60%, 100% { content: "..."; }
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #fcc;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #efe;
+            border: 2px solid #cfc;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .confirmation {
+            text-align: center;
+        }
+
+        .confirmation-icon {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+
+        .confirmation h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .booking-details {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+            margin: 20px 0;
+        }
+
+        .booking-details div {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .booking-details strong {
+            color: #4b5563;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .step.active .step-number {
+            background: #6b7280;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #4caf50;
+            color: white;
+        }
+
+        .step-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .step.active .step-label {
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏢 Conference Room Booking</h1>
+            <p>Book your perfect conference space with weather-adjusted pricing</p>
+        </div>
+
+        <div class="card">
+            <div class="step-indicator">
+                <div class="step active" id="step1-indicator">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Your Details</div>
+                </div>
+                <div class="step" id="step2-indicator">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Select Room</div>
+                </div>
+                <div class="step" id="step3-indicator">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Confirmation</div>
+                </div>
+            </div>
+
+            <!-- Step 1: Client Details -->
+            <div class="form-section active" id="step1">
+                <h2 style="margin-bottom: 20px; color: #333;">Enter Your Details</h2>
+                <div class="form-group">
+                    <label for="clientName">Full Name *</label>
+                    <input type="text" id="clientName" placeholder="Enter your full name" required>
+                </div>
+                <div class="form-group">
+                    <label for="clientEmail">Email Address *</label>
+                    <input type="email" id="clientEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="bookingDate">Booking Date *</label>
+                    <input type="date" id="bookingDate" required>
+                </div>
+                <button class="btn" onclick="proceedToRoomSelection()">Next: Browse Rooms</button>
+            </div>
+
+            <!-- Step 2: Room Selection -->
+            <div class="form-section" id="step2">
+                <h2 style="margin-bottom: 20px; color: #333;">Available Conference Rooms</h2>
+                <div id="loadingRooms" class="loading">Loading available rooms</div>
+                <div id="errorMessage" class="error" style="display: none;"></div>
+                <div id="roomsContainer" class="rooms-grid"></div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn" onclick="goBack(1)" style="background: #999;">Back</button>
+                    <button class="btn" id="confirmBtn" onclick="confirmBooking()" disabled>Confirm Booking</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Confirmation -->
+            <div class="form-section" id="step3">
+                <div class="confirmation">
+                    <div class="confirmation-icon">✅</div>
+                    <h2>Booking Confirmed!</h2>
+                    <p style="color: #666; margin-bottom: 20px;">Your conference room has been successfully booked.</p>
+                    
+                    <div class="booking-details" id="confirmationDetails"></div>
+                    
+                    <button class="btn" onclick="resetBooking()">Make Another Booking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost';
+        let selectedRoom = null;
+        let clientData = {};
+        let roomsWithPricing = [];
+
+        // Set minimum date to today
+        document.getElementById('bookingDate').min = new Date().toISOString().split('T')[0];
+
+        function updateStepIndicators(currentStep) {
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById(`step${i}-indicator`);
+                stepEl.classList.remove('active', 'completed');
+                if (i < currentStep) {
+                    stepEl.classList.add('completed');
+                } else if (i === currentStep) {
+                    stepEl.classList.add('active');
+                }
+            }
+        }
+
+        function showStep(stepNumber) {
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+            updateStepIndicators(stepNumber);
+        }
+
+        function goBack(stepNumber) {
+            showStep(stepNumber);
+        }
+
+        async function proceedToRoomSelection() {
+            const name = document.getElementById('clientName').value.trim();
+            const email = document.getElementById('clientEmail').value.trim();
+            const date = document.getElementById('bookingDate').value;
+
+            if (!name || !email || !date) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            clientData = { name, email, date };
+            showStep(2);
+            await loadRooms();
+        }
+
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        async function loadRooms() {
+            const loadingEl = document.getElementById('loadingRooms');
+            const errorEl = document.getElementById('errorMessage');
+            const roomsContainer = document.getElementById('roomsContainer');
+
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            roomsContainer.innerHTML = '';
+
+            try {
+                // Fetch all rooms
+                const roomsResponse = await fetch(`${API_URL}/api/rooms`);
+                if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
+                const rooms = await roomsResponse.json();
+
+                // Get pricing for each room with weather adjustment
+                roomsWithPricing = await Promise.all(rooms.map(async (room) => {
+                    try {
+                        const availabilityResponse = await fetch(`${API_URL}/api/booking/check-availability`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                room_id: room.room_id,
+                                date: clientData.date
+                            })
+                        });
+
+                        const availabilityData = await availabilityResponse.json();
+                        
+                        return {
+                            ...room,
+                            available: availabilityData.available,
+                            pricing: availabilityData.pricing,
+                            existingBooking: availabilityData.existing_booking
+                        };
+                    } catch (error) {
+                        console.error(`Error checking room ${room.room_id}:`, error);
+                        return { ...room, available: false, error: true };
+                    }
+                }));
