@@ -205,4 +205,22 @@ services:
       - "8084:8081"
     environment:
       - ME_CONFIG_MONGODB_SERVER=booking-mongodb
-      - ME_
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+    depends_on:
+      booking-mongodb:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  auth_mongo_data:
+  room_mongo_data:
+  weather_mongo_data:
+  booking_mongo_data:
