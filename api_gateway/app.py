@@ -30,6 +30,7 @@ def require_auth(f):
         
         # Verify token with auth service
         try:
+            # The auth service just needs the Authorization header, not a JSON body
             verify_response = requests.post(
                 f"{AUTH_SERVICE_URL}/api/auth/verify",
                 headers={"Authorization": auth_header}
