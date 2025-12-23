@@ -77,8 +77,8 @@ def login():
         "user": {"name": user["name"], "email": user["email"]}
     }), 200
 
-# Verify token (for API Gateway) - NEW ENDPOINT
-@app.route('/api/auth/verify', methods=['POST'])
+# Verify token (for API Gateway) - UPDATED TO ACCEPT GET AND POST
+@app.route('/api/auth/verify', methods=['POST', 'GET'])
 def verify():
     token = request.headers.get('Authorization')
     

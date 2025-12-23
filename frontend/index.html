@@ -423,8 +423,6 @@
                 const roomsResponse = await fetch(`${API_URL}/api/rooms`);
                 if (!roomsResponse.ok) throw new Error('Failed to fetch rooms');
                 const roomsData = await roomsResponse.json();
-                
-                // FIX: Handle wrapped response - extract the rooms array
                 const rooms = roomsData.rooms || roomsData;
 
                 roomsWithPricing = await Promise.all(rooms.map(async (room) => {
@@ -541,7 +539,9 @@
             try {
                 const response = await fetch(`${API_URL}/api/booking/confirm`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         room_id: selectedRoom.room_id,
                         date: clientData.date,
@@ -561,7 +561,7 @@
                 }
 
             } catch (error) {
-                alert(`Error: ${error.message}`);
+                alert('Error: ' + error.message);
                 confirmBtn.disabled = false;
                 confirmBtn.textContent = 'Confirm Booking';
             }
