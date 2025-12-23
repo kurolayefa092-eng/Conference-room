@@ -77,6 +77,32 @@ def login():
         "user": {"name": user["name"], "email": user["email"]}
     }), 200
 
+# Verify token (for API Gateway) - NEW ENDPOINT
+@app.route('/api/auth/verify', methods=['POST'])
+def verify():
+    token = request.headers.get('Authorization')
+    
+    if not token:
+        return jsonify({"error": "No token provided"}), 401
+    
+    # Remove "Bearer " if present
+    token = token.replace("Bearer ", "")
+    
+    # Check if token is valid
+    if token not in logged_in_users:
+        return jsonify({"error": "Invalid token"}), 401
+    
+    email = logged_in_users[token]
+    user = users_collection.find_one({"email": email})
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({
+        "valid": True,
+        "user": {"name": user["name"], "email": user["email"]}
+    }), 200
+
 # Get current user info
 @app.route('/api/auth/me', methods=['GET'])
 def get_me():
