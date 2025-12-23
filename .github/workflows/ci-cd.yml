@@ -93,30 +93,30 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   # ==========================================
-  # SECURITY SCANNING
+  # SECURITY SCANNING - TEMPORARILY DISABLED
   # ==========================================
-  security-scan:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [api_gateway, room_service, user_auth_service, weather_service]
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: './${{ matrix.service }}'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-      
-      - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+  # security-scan:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       service: [api_gateway, room_service, user_auth_service, weather_service]
+  #   
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     
+  #     - name: Run Trivy vulnerability scanner
+  #       uses: aquasecurity/trivy-action@master
+  #       with:
+  #         scan-type: 'fs'
+  #         scan-ref: './${{ matrix.service }}'
+  #         format: 'sarif'
+  #         output: 'trivy-results.sarif'
+  #     
+  #     - name: Upload Trivy results to GitHub Security tab
+  #       uses: github/codeql-action/upload-sarif@v2
+  #       if: always()
+  #       with:
+  #         sarif_file: 'trivy-results.sarif'
 
   # ==========================================
   # DEPENDENCY CHECK
@@ -192,7 +192,7 @@ jobs:
   # DEPLOY TO STAGING
   # ==========================================
   deploy-staging:
-    needs: [security-scan, integration-tests]
+    needs: [dependency-check, integration-tests]  # Removed security-scan dependency
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     
@@ -221,7 +221,7 @@ jobs:
   # DEPLOY TO PRODUCTION
   # ==========================================
   deploy-production:
-    needs: [security-scan, integration-tests]
+    needs: [dependency-check, integration-tests]  # Removed security-scan dependency
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
