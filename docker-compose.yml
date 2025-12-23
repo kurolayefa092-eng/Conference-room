@@ -106,7 +106,7 @@ services:
     restart: unless-stopped
 
   # ==========================================
-  # WEATHER SERVICE - Port 86
+  # WEATHER SERVICE - Port 86 (handles bookings & weather)
   # ==========================================
   weather-mongodb:
     image: mongo:7.0
@@ -133,9 +133,12 @@ services:
       - "86:86"
     environment:
       - MONGO_URI=mongodb://weather-mongodb:27017/
+      - ROOM_SERVICE_URL=http://room-service:85
     depends_on:
       weather-mongodb:
         condition: service_healthy
+      room_service:
+        condition: service_started
     networks:
       - microservices-network
     restart: unless-stopped
@@ -158,64 +161,6 @@ services:
     restart: unless-stopped
 
   # ==========================================
-  # BOOKING SERVICE - Port 87
-  # ==========================================
-  booking-mongodb:
-    image: mongo:7.0
-    container_name: booking-mongodb
-    ports:
-      - "27020:27017"
-    volumes:
-      - booking_mongo_data:/data/db
-    networks:
-      - microservices-network
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
-
-  booking_service:
-    build:
-      context: ./booking_service
-      dockerfile: Dockerfile
-    container_name: booking-service
-    ports:
-      - "87:87"
-    environment:
-      - MONGO_URI=mongodb://booking-mongodb:27017/
-      - ROOM_SERVICE_URL=http://room-service:85
-      - WEATHER_SERVICE_URL=http://weather-service:86
-    depends_on:
-      booking-mongodb:
-        condition: service_healthy
-      room_service:
-        condition: service_started
-      weather_service:
-        condition: service_started
-    networks:
-      - microservices-network
-    restart: unless-stopped
-
-  booking-mongo-express:
-    image: mongo-express:latest
-    container_name: booking-mongo-express
-    ports:
-      - "8084:8081"
-    environment:
-      - ME_CONFIG_MONGODB_SERVER=booking-mongodb
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=pass
-    depends_on:
-      booking-mongodb:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    restart: unless-stopped
-
-  # ==========================================
   # API GATEWAY - Port 80
   # ==========================================
   api_gateway:
@@ -229,12 +174,10 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:84
       - ROOM_SERVICE_URL=http://room-service:85
       - WEATHER_SERVICE_URL=http://weather-service:86
-      - BOOKING_SERVICE_URL=http://booking-service:87
     depends_on:
       - user_auth_service
       - room_service
       - weather_service
-      - booking_service
     networks:
       - microservices-network
     restart: unless-stopped
@@ -247,4 +190,3 @@ volumes:
   auth_mongo_data:
   room_mongo_data:
   weather_mongo_data:
-  booking_mongo_data:

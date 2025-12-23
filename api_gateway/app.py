@@ -12,7 +12,6 @@ CORS(app)
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:84")
 ROOM_SERVICE_URL = os.getenv("ROOM_SERVICE_URL", "http://room-service:85")
 WEATHER_SERVICE_URL = os.getenv("WEATHER_SERVICE_URL", "http://weather-service:86")
-BOOKING_SERVICE_URL = os.getenv("BOOKING_SERVICE_URL", "http://booking-service:87")
 
 # Logging function
 def log_request(service, endpoint, method, status_code):
@@ -88,8 +87,7 @@ def health():
     services = {
         "auth": f"{AUTH_SERVICE_URL}/health",
         "room": f"{ROOM_SERVICE_URL}/health",
-        "weather": f"{WEATHER_SERVICE_URL}/health",
-        "booking": f"{BOOKING_SERVICE_URL}/health"
+        "weather": f"{WEATHER_SERVICE_URL}/health"
     }
     
     all_healthy = True
@@ -206,53 +204,34 @@ def get_all_forecasts():
     return response
 
 # ==========================================
-# BOOKING SERVICE ROUTES (Require Auth)
+# BOOKING ROUTES (Weather Service - Public)
 # ==========================================
 @app.route("/api/booking/check-availability", methods=["POST"])
 def check_availability():
-    log_request("booking", "/check-availability", "POST", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, "/api/booking/check-availability", method='POST')
-    log_request("booking", "/check-availability", "POST", response.status_code)
+    log_request("weather", "/check-availability", "POST", "->")
+    response = proxy_request(WEATHER_SERVICE_URL, "/api/booking/check-availability", method='POST')
+    log_request("weather", "/check-availability", "POST", response.status_code)
     return response
 
 @app.route("/api/booking/confirm", methods=["POST"])
-@require_auth
 def confirm_booking():
-    log_request("booking", "/confirm", "POST", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, "/api/booking/confirm", method='POST')
-    log_request("booking", "/confirm", "POST", response.status_code)
+    log_request("weather", "/confirm", "POST", "->")
+    response = proxy_request(WEATHER_SERVICE_URL, "/api/booking/confirm", method='POST')
+    log_request("weather", "/confirm", "POST", response.status_code)
     return response
 
-@app.route("/api/booking/my-bookings", methods=["GET"])
-@require_auth
-def get_my_bookings():
-    log_request("booking", "/my-bookings", "GET", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, "/api/booking/my-bookings", method='GET')
-    log_request("booking", "/my-bookings", "GET", response.status_code)
+@app.route("/api/booking/room/<room_id>/<date>", methods=["GET"])
+def get_room_bookings(room_id, date):
+    log_request("weather", f"/room/{room_id}/{date}", "GET", "->")
+    response = proxy_request(WEATHER_SERVICE_URL, f"/api/booking/room/{room_id}/{date}", method='GET')
+    log_request("weather", f"/room/{room_id}/{date}", "GET", response.status_code)
     return response
 
-@app.route("/api/booking/all", methods=["GET"])
-@require_auth
-def get_all_bookings():
-    log_request("booking", "/all", "GET", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, "/api/booking/all", method='GET')
-    log_request("booking", "/all", "GET", response.status_code)
-    return response
-
-@app.route("/api/booking/<booking_id>", methods=["GET"])
-@require_auth
-def get_booking(booking_id):
-    log_request("booking", f"/{booking_id}", "GET", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, f"/api/booking/{booking_id}", method='GET')
-    log_request("booking", f"/{booking_id}", "GET", response.status_code)
-    return response
-
-@app.route("/api/booking/cancel/<booking_id>", methods=["DELETE"])
-@require_auth
+@app.route("/api/booking/cancel/<booking_id>", methods=["POST"])
 def cancel_booking(booking_id):
-    log_request("booking", f"/cancel/{booking_id}", "DELETE", "->")
-    response = proxy_request(BOOKING_SERVICE_URL, f"/api/booking/cancel/{booking_id}", method='DELETE')
-    log_request("booking", f"/cancel/{booking_id}", "DELETE", response.status_code)
+    log_request("weather", f"/cancel/{booking_id}", "POST", "->")
+    response = proxy_request(WEATHER_SERVICE_URL, f"/api/booking/cancel/{booking_id}", method='POST')
+    log_request("weather", f"/cancel/{booking_id}", "POST", response.status_code)
     return response
 
 # ==========================================

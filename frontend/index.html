@@ -488,9 +488,9 @@
                     ${room.available ? `
                         <div class="price">£${room.pricing.final_price.toFixed(2)}/day</div>
                         <div style="font-size: 0.85rem; color: #999;">
-                            Base: £${room.pricing.base_price} 
+                            Base: £${room.pricing.base_price.toFixed(2)} 
                             ${room.pricing.additional_charge_percentage > 0 ? 
-                                `+ ${room.pricing.additional_charge_percentage}% weather adjustment` : 
+                                `+ ${room.pricing.additional_charge_percentage}% weather adjustment (£${room.pricing.additional_charge_amount.toFixed(2)})` : 
                                 '(No additional charge)'}
                         </div>
                         <div class="weather-info">
@@ -499,11 +499,11 @@
                         </div>
                     ` : `
                         <div style="color: #c33; font-weight: bold; margin-top: 10px;">
-                            ❌ Already Booked
+                            ❌ BOOKED
                         </div>
                         ${room.existingBooking ? 
                             `<div style="font-size: 0.85rem; color: #999; margin-top: 5px;">
-                                Booked by: ${room.existingBooking.booked_by}
+                                Booked by: ${room.existingBooking.client_name}
                             </div>` : ''}
                     `}
                 `;
@@ -546,7 +546,10 @@
                         room_id: selectedRoom.room_id,
                         date: clientData.date,
                         client_name: clientData.name,
-                        client_email: clientData.email
+                        client_email: clientData.email,
+                        location: selectedRoom.location,
+                        base_price: selectedRoom.pricing.base_price,
+                        room_name: selectedRoom.name
                     })
                 });
 
@@ -577,11 +580,11 @@
                 <div><strong>Location:</strong> ${booking.location}</div>
                 <div><strong>Date:</strong> ${booking.date}</div>
                 <div><strong>Temperature:</strong> ${booking.weather_adjustment.forecasted_temperature}°C</div>
-                <div><strong>Base Price:</strong> £${booking.base_price}</div>
+                <div><strong>Base Price:</strong> £${booking.base_price.toFixed(2)}</div>
                 ${booking.weather_adjustment.additional_charge_percentage > 0 ? 
-                    `<div><strong>Weather Adjustment:</strong> +${booking.weather_adjustment.additional_charge_percentage}% (£${booking.weather_adjustment.additional_charge_amount})</div>` 
+                    `<div><strong>Weather Adjustment:</strong> +${booking.weather_adjustment.additional_charge_percentage}% (£${booking.weather_adjustment.additional_charge_amount.toFixed(2)})</div>` 
                     : ''}
-                <div style="font-size: 1.3rem; margin-top: 10px;"><strong>Total Price:</strong> £${booking.final_price}</div>
+                <div style="font-size: 1.3rem; margin-top: 10px;"><strong>Total Price:</strong> £${booking.final_price.toFixed(2)}</div>
             `;
             showStep(3);
         }
