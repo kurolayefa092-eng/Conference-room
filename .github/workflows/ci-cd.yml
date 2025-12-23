@@ -192,7 +192,7 @@ jobs:
   # DEPLOY TO STAGING
   # ==========================================
   deploy-staging:
-    needs: [dependency-check, integration-tests]  # Removed security-scan dependency
+    needs: [dependency-check, integration-tests]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     
@@ -221,7 +221,7 @@ jobs:
   # DEPLOY TO PRODUCTION
   # ==========================================
   deploy-production:
-    needs: [dependency-check, integration-tests]  # Removed security-scan dependency
+    needs: [dependency-check, integration-tests]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
